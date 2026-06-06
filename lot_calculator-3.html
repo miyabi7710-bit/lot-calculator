@@ -445,7 +445,10 @@
 
   <!-- 同時保有ポジション管理 -->
   <div class="section">
-    <div class="section-title">同時保有ポジション管理</div>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <div class="section-title" style="margin-bottom:0;">同時保有ポジション管理</div>
+      <button id="resetBtn" onclick="resetPositions()" style="background:rgba(255,23,68,0.15); color:var(--red); border:1px solid var(--red); border-radius:6px; padding:6px 14px; font-size:12px; font-family:'Noto Sans JP',sans-serif; cursor:pointer;">全リセット</button>
+    </div>
 
     <div id="positionList">
       <div class="empty-msg" id="emptyMsg">保有中のポジションなし</div>
@@ -589,9 +592,27 @@
 </div>
 
 <script>
-  // ポジション管理
+  // ポジション管理（localStorageで永続保存）
+  const STORAGE_KEY = 'lotcalc_positions_v1';
   let positions = [];
   let lastCalc = null;
+
+  function savePositions() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(positions)); } catch(e) {}
+  }
+
+  function loadPositions() {
+    try {
+      const data = localStorage.getItem(STORAGE_KEY);
+      if (data) positions = JSON.parse(data);
+    } catch(e) { positions = []; }
+  }
+
+  function resetPositions() {
+    positions = [];
+    savePositions();
+    renderPositions();
+  }
 
   function getPipValue(symbol, usdJpy) {
     switch(symbol) {
@@ -700,12 +721,14 @@
 
   function removePosition(idx) {
     positions.splice(idx, 1);
+    savePositions();
     renderPositions();
   }
 
   function addPosition() {
     if (!lastCalc) return;
     positions.push(lastCalc);
+    savePositions();
     renderPositions();
     document.getElementById('addBtn').style.display = 'none';
     document.getElementById('resultBox').classList.remove('show');
@@ -799,6 +822,8 @@
   document.getElementById('usdJpy').addEventListener('input', updateRefTable);
   document.getElementById('balance').addEventListener('input', updateMeter);
   document.getElementById('maxTotalRisk').addEventListener('input', updateMeter);
+  loadPositions();
+  renderPositions();
   updateRefTable();
   updateMeter();
 </script>
