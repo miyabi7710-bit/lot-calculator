@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>ロット計算ツール</title>
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0e1a">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+JP:wght@300;400;700&display=swap');
+
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --accent: #00e5ff;
+    --accent2: #ff6b35;
+    --green: #00e676;
+    --red: #ff1744;
+    --yellow: #ffd740;
+    --text: #e8f0fe;
+    --muted: #8899aa;
+    --border: #1e3050;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    min-height: 100vh;
+    padding: 0 0 60px 0;
+  }
+
+  header {
+    background: linear-gradient(135deg, #0a0e1a 0%, #0d1f3c 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 20px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  header h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  header p {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .container { padding: 20px 16px; max-width: 480px; margin: 0 auto; }
+
+  .section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+
+  .section-title {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 12px;
+    font-weight: 700;
+  }
+
+  .input-group { margin-bottom: 12px; }
+
+  label {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 6px;
+    font-weight: 300;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  input[type="number"], select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 18px;
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 1px;
+    padding: 12px 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+  }
+
+  input[type="number"]:focus, select:focus { border-color: var(--accent); }
+
+  select {
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 15px;
+    cursor: pointer;
+  }
+
+  .unit {
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+    min-width: 28px;
+  }
+
+  .btn-group {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .sel-btn {
+    flex: 1;
+    padding: 8px 0;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--muted);
+    font-size: 13px;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .sel-btn.active {
+    background: var(--accent);
+    color: #000;
+    border-color: var(--accent);
+    font-weight: 700;
+  }
+
+  /* ポジション管理 */
+  .position-list { margin-top: 10px; }
+
+  .position-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    border-left: 3px solid var(--accent2);
+  }
+
+  .position-info { flex: 1; }
+  .position-name { font-size: 13px; font-weight: 700; color: var(--text); }
+  .position-detail { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .position-risk { font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--red); }
+
+  .del-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    padding: 4px 10px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-left: 10px;
+  }
+
+  /* リスク枠メーター */
+  .risk-meter {
+    margin-top: 12px;
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 12px;
+  }
+
+  .risk-meter-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .risk-meter-label { font-size: 11px; color: var(--muted); }
+  .risk-meter-value { font-family: 'Bebas Neue', sans-serif; font-size: 18px; }
+
+  .meter-bar {
+    height: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .meter-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.4s ease, background 0.4s;
+  }
+
+  .risk-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .risk-cell {
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 8px 10px;
+    text-align: center;
+  }
+
+  .risk-cell .lbl { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .risk-cell .val { font-family: 'Bebas Neue', sans-serif; font-size: 16px; margin-top: 2px; }
+
+  /* 計算ボタン */
+  .calc-btn {
+    width: 100%;
+    padding: 18px;
+    background: linear-gradient(135deg, var(--accent) 0%, #0099bb 100%);
+    color: #000;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 3px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    margin-bottom: 14px;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+
+  .calc-btn:active { transform: scale(0.98); opacity: 0.9; }
+
+  .add-btn {
+    width: 100%;
+    padding: 14px;
+    background: transparent;
+    color: var(--accent2);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 2px;
+    border: 1px solid var(--accent2);
+    border-radius: 12px;
+    cursor: pointer;
+    margin-bottom: 14px;
+    transition: all 0.2s;
+  }
+
+  .add-btn:active { background: rgba(255,107,53,0.1); }
+
+  /* 結果 */
+  .result-box {
+    background: var(--surface);
+    border: 2px solid var(--accent);
+    border-radius: 12px;
+    padding: 20px 16px;
+    margin-bottom: 14px;
+    display: none;
+  }
+
+  .result-box.show { display: block; }
+
+  .result-main {
+    text-align: center;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .result-label {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .result-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 52px;
+    color: var(--accent);
+    line-height: 1;
+    letter-spacing: 2px;
+  }
+
+  .result-unit { font-size: 18px; color: var(--muted); margin-left: 4px; }
+
+  .result-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .result-item {
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+
+  .result-item .label {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .result-item .value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 1px;
+  }
+
+  .value.green { color: var(--green); }
+  .value.red { color: var(--red); }
+  .value.orange { color: var(--accent2); }
+  .value.yellow { color: var(--yellow); }
+
+  .rr-display {
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .rr-label { font-size: 11px; color: var(--muted); }
+  .rr-value { font-family: 'Bebas Neue', sans-serif; font-size: 24px; color: var(--accent2); letter-spacing: 1px; }
+
+  .rr-bar { height: 6px; background: var(--border); border-radius: 3px; margin-top: 8px; overflow: hidden; }
+  .rr-fill { height: 100%; background: linear-gradient(90deg, var(--accent2), var(--green)); border-radius: 3px; transition: width 0.5s ease; }
+
+  .warning {
+    background: rgba(255, 23, 68, 0.1);
+    border: 1px solid var(--red);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: var(--red);
+    margin-top: 10px;
+    display: none;
+  }
+
+  .warning.show { display: block; }
+
+  .info-box {
+    background: rgba(0,229,255,0.08);
+    border: 1px solid rgba(0,229,255,0.3);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: var(--accent);
+    margin-top: 10px;
+    display: none;
+  }
+
+  .info-box.show { display: block; }
+
+  /* pip参考テーブル */
+  .pip-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+
+  .pip-table th {
+    text-align: left;
+    color: var(--muted);
+    font-weight: 300;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--border);
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .pip-table td { padding: 8px 8px; border-bottom: 1px solid var(--border); color: var(--text); }
+  .pip-table tr:last-child td { border-bottom: none; }
+
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+  .tag-blue { background: rgba(0,229,255,0.15); color: var(--accent); }
+  .tag-orange { background: rgba(255,107,53,0.15); color: var(--accent2); }
+  .tag-purple { background: rgba(180,100,255,0.15); color: #c084fc; }
+
+  .empty-msg { text-align: center; color: var(--muted); font-size: 12px; padding: 16px 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>LOT CALCULATOR</h1>
+  <p>Fintokei × MT5 リスク管理ツール v2</p>
+</header>
+
+<div class="container">
+
+  <!-- 口座設定 -->
+  <div class="section">
+    <div class="section-title">口座設定</div>
+
+    <div class="input-group">
+      <label>口座残高（JPY）</label>
+      <div class="input-row">
+        <input type="number" id="balance" value="1000000" inputmode="numeric">
+        <span class="unit">円</span>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label>1トレードのリスク率</label>
+      <div class="input-row">
+        <input type="number" id="riskPct" value="0.5" step="0.1" inputmode="decimal">
+        <span class="unit">%</span>
+      </div>
+      <div class="btn-group">
+        <button class="sel-btn active" onclick="setRisk(0.5)">0.5%</button>
+        <button class="sel-btn" onclick="setRisk(1)">1%</button>
+        <button class="sel-btn" onclick="setRisk(2)">2%</button>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label>総リスク上限（同時保有の合計）</label>
+      <div class="input-row">
+        <input type="number" id="maxTotalRisk" value="3" step="0.5" inputmode="decimal">
+        <span class="unit">%</span>
+      </div>
+      <div class="btn-group">
+        <button class="sel-btn" onclick="setMaxRisk(2)">2%</button>
+        <button class="sel-btn active" onclick="setMaxRisk(3)">3%</button>
+        <button class="sel-btn" onclick="setMaxRisk(5)">5%</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 同時保有ポジション管理 -->
+  <div class="section">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <div class="section-title" style="margin-bottom:0;">同時保有ポジション管理</div>
+      <button id="resetBtn" onclick="resetPositions()" style="background:rgba(255,23,68,0.15); color:var(--red); border:1px solid var(--red); border-radius:6px; padding:6px 14px; font-size:12px; font-family:'Noto Sans JP',sans-serif; cursor:pointer;">全リセット</button>
+    </div>
+
+    <div id="positionList">
+      <div class="empty-msg" id="emptyMsg">保有中のポジションなし</div>
+    </div>
+
+    <div class="risk-meter" id="riskMeter">
+      <div class="risk-meter-row">
+        <span class="risk-meter-label">使用中リスク</span>
+        <span class="risk-meter-value" id="usedRiskPct" style="color:var(--green)">0.0%</span>
+      </div>
+      <div class="meter-bar">
+        <div class="meter-fill" id="meterFill" style="width:0%; background:var(--green)"></div>
+      </div>
+      <div class="risk-summary">
+        <div class="risk-cell">
+          <div class="lbl">使用済み</div>
+          <div class="val" id="sumUsed" style="color:var(--accent2)">¥0</div>
+        </div>
+        <div class="risk-cell">
+          <div class="lbl">残り枠</div>
+          <div class="val" id="sumRemain" style="color:var(--green)">-</div>
+        </div>
+        <div class="risk-cell">
+          <div class="lbl">追加可能</div>
+          <div class="val" id="sumSlots" style="color:var(--accent)">-</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- トレード設定 -->
+  <div class="section">
+    <div class="section-title">新規トレード計算</div>
+
+    <div class="input-group">
+      <label>銘柄</label>
+      <select id="symbol" onchange="onSymbolChange()">
+        <option value="EURUSD">EURUSD（ユーロ/米ドル）</option>
+        <option value="USDJPY">USDJPY（米ドル/円）</option>
+        <option value="EURJPY">EURJPY（ユーロ/円）</option>
+        <option value="GBPJPY">GBPJPY（ポンド/円）</option>
+        <option value="GBPUSD">GBPUSD（ポンド/米ドル）</option>
+        <option value="XAUUSD">XAUUSD（ゴールド）</option>
+        <option value="BTCUSD">BTCUSDp（ビットコイン）</option>
+        <option value="ETHUSD">ETHUSDm（イーサリアム）</option>
+        <option value="OTHER">その他（pip値を直接入力）</option>
+      </select>
+    </div>
+
+    <div class="input-group">
+      <label>エントリー価格</label>
+      <input type="number" id="entryPrice" placeholder="例: 1.16470" step="0.00001" inputmode="decimal">
+    </div>
+
+    <div class="input-group">
+      <label>ストップロス（SL）価格</label>
+      <input type="number" id="slPrice" placeholder="例: 1.16530" step="0.00001" inputmode="decimal">
+    </div>
+
+    <div class="input-group">
+      <label>テイクプロフィット（TP）価格</label>
+      <input type="number" id="tpPrice" placeholder="例: 1.16425（任意）" step="0.00001" inputmode="decimal">
+    </div>
+
+    <div class="input-group" id="pipValueGroup" style="display:none;">
+      <label>1ロットあたりの1pip価値（JPY）</label>
+      <input type="number" id="customPipVal" placeholder="例: 1000" inputmode="numeric">
+    </div>
+
+    <div class="input-group">
+      <label>USD/JPY レート（概算）</label>
+      <div class="input-row">
+        <input type="number" id="usdJpy" value="158" step="1" inputmode="numeric">
+        <span class="unit">円</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="calc-btn" onclick="calculate()">▶ ロットを計算する</button>
+
+  <!-- 結果 -->
+  <div class="result-box" id="resultBox">
+    <div class="result-main">
+      <div class="result-label">推奨ロット数</div>
+      <div>
+        <span class="result-value" id="resLot">0.00</span>
+        <span class="result-unit">lot</span>
+      </div>
+    </div>
+
+    <div class="result-grid">
+      <div class="result-item">
+        <div class="label">リスク金額</div>
+        <div class="value red" id="resRiskJpy">-</div>
+      </div>
+      <div class="result-item">
+        <div class="label">SL幅</div>
+        <div class="value orange" id="resPips">-</div>
+      </div>
+      <div class="result-item">
+        <div class="label">TP到達時の利益</div>
+        <div class="value green" id="resProfit">-</div>
+      </div>
+      <div class="result-item">
+        <div class="label">失格まで（単独）</div>
+        <div class="value yellow" id="resCount">-</div>
+      </div>
+    </div>
+
+    <div class="rr-display">
+      <div>
+        <div class="rr-label">リスクリワード比</div>
+        <div class="rr-value" id="resRR">-</div>
+      </div>
+      <div style="text-align:right;">
+        <div class="rr-label" id="rrComment">-</div>
+      </div>
+    </div>
+    <div class="rr-bar"><div class="rr-fill" id="rrFill" style="width:0%"></div></div>
+
+    <div class="info-box" id="infoCapacity">-</div>
+    <div class="warning" id="warnOver">⚠️ このトレードを追加すると総リスク上限を超えます。ロットを減らすか、既存ポジションを決済してください。</div>
+    <div class="warning" id="warnRR">⚠️ RRが1:1未満です。リスクがリワードを上回っています。</div>
+    <div class="warning" id="warnLot">⚠️ ロット数が最小ロット（0.01）を下回っています。</div>
+  </div>
+
+  <button class="add-btn" id="addBtn" onclick="addPosition()" style="display:none;">＋ ポジションリストに追加</button>
+
+  <!-- pip参考 -->
+  <div class="section">
+    <div class="section-title">銘柄別 pip参考値（1ロット）</div>
+    <table class="pip-table">
+      <tr><th>銘柄</th><th>1pip価値</th><th>種別</th></tr>
+      <tr><td>EURUSD</td><td id="ref_EURUSD">-</td><td><span class="tag tag-blue">FX</span></td></tr>
+      <tr><td>USDJPY</td><td id="ref_USDJPY">-</td><td><span class="tag tag-blue">FX</span></td></tr>
+      <tr><td>EURJPY</td><td id="ref_EURJPY">-</td><td><span class="tag tag-blue">FX</span></td></tr>
+      <tr><td>GBPJPY</td><td id="ref_GBPJPY">-</td><td><span class="tag tag-blue">FX</span></td></tr>
+      <tr><td>GBPUSD</td><td id="ref_GBPUSD">-</td><td><span class="tag tag-blue">FX</span></td></tr>
+      <tr><td>XAUUSD</td><td id="ref_XAUUSD">-</td><td><span class="tag tag-orange">CFD</span></td></tr>
+      <tr><td>BTCUSDp</td><td id="ref_BTCUSD">-</td><td><span class="tag tag-orange">CFD</span></td></tr>
+      <tr><td>ETHUSDm</td><td id="ref_ETHUSD">-</td><td><span class="tag tag-purple">CFD</span></td></tr>
+    </table>
+  </div>
+
+</div>
+
+<script>
+  // ポジション管理（localStorageで永続保存）
+  const STORAGE_KEY = 'lotcalc_positions_v1';
+  let positions = [];
+  let lastCalc = null;
+
+  function savePositions() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(positions)); } catch(e) {}
+  }
+
+  function loadPositions() {
+    try {
+      const data = localStorage.getItem(STORAGE_KEY);
+      if (data) positions = JSON.parse(data);
+    } catch(e) { positions = []; }
+  }
+
+  function resetPositions() {
+    positions = [];
+    savePositions();
+    renderPositions();
+  }
+
+  function getPipValue(symbol, usdJpy) {
+    switch(symbol) {
+      case 'EURUSD': return 10 * usdJpy;
+      case 'GBPUSD': return 10 * usdJpy;
+      case 'USDJPY': return 1000;
+      case 'EURJPY': return 1000;
+      case 'GBPJPY': return 1000;
+      case 'XAUUSD': return 10 * usdJpy;
+      case 'BTCUSD': return 1 * usdJpy;
+      case 'ETHUSD': return 0.1 * usdJpy; // 1ロット=1ETH、1pip=0.1$
+      default: return null;
+    }
+  }
+
+  function getPipMultiplier(symbol) {
+    if (symbol === 'USDJPY') return 100;
+    if (symbol === 'EURJPY') return 100;
+    if (symbol === 'GBPJPY') return 100;
+    if (symbol === 'BTCUSD') return 1;
+    if (symbol === 'XAUUSD') return 10;
+    if (symbol === 'ETHUSD') return 10;
+    return 10000;
+  }
+
+  function updateRefTable() {
+    const usdJpy = parseFloat(document.getElementById('usdJpy').value) || 158;
+    ['EURUSD','USDJPY','EURJPY','GBPJPY','GBPUSD','XAUUSD','BTCUSD','ETHUSD'].forEach(s => {
+      const val = getPipValue(s, usdJpy);
+      const el = document.getElementById('ref_' + s);
+      if (el) el.textContent = val ? `¥${Math.round(val).toLocaleString()}` : '-';
+    });
+  }
+
+  function onSymbolChange() {
+    const s = document.getElementById('symbol').value;
+    document.getElementById('pipValueGroup').style.display = s === 'OTHER' ? 'block' : 'none';
+  }
+
+  function setRisk(val) {
+    document.getElementById('riskPct').value = val;
+    document.querySelectorAll('.sel-btn').forEach(btn => {
+      if (['0.5%','1%','2%'].includes(btn.textContent)) {
+        btn.classList.toggle('active', parseFloat(btn.textContent) === val);
+      }
+    });
+  }
+
+  function setMaxRisk(val) {
+    document.getElementById('maxTotalRisk').value = val;
+    document.querySelectorAll('.sel-btn').forEach(btn => {
+      if (['2%','3%','5%'].includes(btn.textContent)) {
+        btn.classList.toggle('active', parseFloat(btn.textContent) === val);
+      }
+    });
+    updateMeter();
+  }
+
+  function updateMeter() {
+    const balance = parseFloat(document.getElementById('balance').value) || 1000000;
+    const maxRiskPct = parseFloat(document.getElementById('maxTotalRisk').value) || 3;
+    const maxRiskJpy = balance * (maxRiskPct / 100);
+
+    const usedJpy = positions.reduce((sum, p) => sum + p.riskJpy, 0);
+    const usedPct = (usedJpy / balance) * 100;
+    const remainJpy = Math.max(0, maxRiskJpy - usedJpy);
+    const riskPerTrade = parseFloat(document.getElementById('riskPct').value) || 0.5;
+    const riskPerTradeJpy = balance * (riskPerTrade / 100);
+    const slotsLeft = Math.floor(remainJpy / riskPerTradeJpy);
+
+    const pct = Math.min((usedJpy / maxRiskJpy) * 100, 100);
+    document.getElementById('meterFill').style.width = pct + '%';
+    document.getElementById('meterFill').style.background =
+      pct >= 90 ? 'var(--red)' : pct >= 60 ? 'var(--yellow)' : 'var(--green)';
+
+    document.getElementById('usedRiskPct').textContent = usedPct.toFixed(1) + '%';
+    document.getElementById('usedRiskPct').style.color =
+      pct >= 90 ? 'var(--red)' : pct >= 60 ? 'var(--yellow)' : 'var(--green)';
+
+    document.getElementById('sumUsed').textContent = `¥${Math.round(usedJpy).toLocaleString()}`;
+    document.getElementById('sumRemain').textContent = `¥${Math.round(remainJpy).toLocaleString()}`;
+    document.getElementById('sumSlots').textContent = slotsLeft > 0 ? `あと${slotsLeft}本` : '上限';
+
+    document.getElementById('emptyMsg').style.display = positions.length === 0 ? 'block' : 'none';
+    return { usedJpy, remainJpy, maxRiskJpy };
+  }
+
+  function renderPositions() {
+    const list = document.getElementById('positionList');
+    const existing = list.querySelectorAll('.position-item');
+    existing.forEach(e => e.remove());
+
+    positions.forEach((p, i) => {
+      const div = document.createElement('div');
+      div.className = 'position-item';
+      div.innerHTML = `
+        <div class="position-info">
+          <div class="position-name">${p.symbol} <span style="font-size:10px;color:var(--muted);font-weight:300">${p.lot}lot</span></div>
+          <div class="position-detail">SL: ${p.slPips.toFixed(1)}pips / RR: ${p.rr ? '1:'+p.rr.toFixed(1) : '-'}</div>
+        </div>
+        <div class="position-risk">¥${Math.round(p.riskJpy).toLocaleString()}</div>
+        <button class="del-btn" onclick="removePosition(${i})">×</button>
+      `;
+      list.appendChild(div);
+    });
+
+    document.getElementById('emptyMsg').style.display = positions.length === 0 ? 'block' : 'none';
+    updateMeter();
+  }
+
+  function removePosition(idx) {
+    positions.splice(idx, 1);
+    savePositions();
+    renderPositions();
+  }
+
+  function addPosition() {
+    if (!lastCalc) return;
+    positions.push(lastCalc);
+    savePositions();
+    renderPositions();
+    document.getElementById('addBtn').style.display = 'none';
+    document.getElementById('resultBox').classList.remove('show');
+    // 入力リセット
+    document.getElementById('entryPrice').value = '';
+    document.getElementById('slPrice').value = '';
+    document.getElementById('tpPrice').value = '';
+    lastCalc = null;
+  }
+
+  function calculate() {
+    const balance     = parseFloat(document.getElementById('balance').value);
+    const riskPct     = parseFloat(document.getElementById('riskPct').value);
+    const maxRiskPct  = parseFloat(document.getElementById('maxTotalRisk').value) || 3;
+    const symbol      = document.getElementById('symbol').value;
+    const entry       = parseFloat(document.getElementById('entryPrice').value);
+    const sl          = parseFloat(document.getElementById('slPrice').value);
+    const tp          = parseFloat(document.getElementById('tpPrice').value);
+    const usdJpy      = parseFloat(document.getElementById('usdJpy').value) || 158;
+
+    if (!balance || !riskPct || !entry || !sl) {
+      alert('残高・リスク率・エントリー・SLを入力してください');
+      return;
+    }
+
+    const pipMult = getPipMultiplier(symbol);
+    const slPips = Math.abs(entry - sl) * pipMult;
+
+    let pipValueJpy;
+    if (symbol === 'OTHER') {
+      pipValueJpy = parseFloat(document.getElementById('customPipVal').value);
+      if (!pipValueJpy) { alert('pip値を入力してください'); return; }
+    } else {
+      pipValueJpy = getPipValue(symbol, usdJpy);
+    }
+
+    const riskJpy = balance * (riskPct / 100);
+    const lot = riskJpy / (slPips * pipValueJpy);
+    const lotRounded = Math.floor(lot * 100) / 100;
+
+    let rr = null, tpPips = null, profitJpy = null;
+    if (tp) {
+      tpPips = Math.abs(tp - entry) * pipMult;
+      rr = tpPips / slPips;
+      profitJpy = tpPips * pipValueJpy * lotRounded;
+    }
+
+    const lossLimit = balance * 0.20;
+    const countToFail = Math.floor(lossLimit / riskJpy);
+
+    // 総リスク確認
+    const { usedJpy, remainJpy } = updateMeter();
+    const overLimit = riskJpy > remainJpy;
+
+    // 表示
+    document.getElementById('resLot').textContent = lotRounded.toFixed(2);
+    document.getElementById('resRiskJpy').textContent = `¥${Math.round(riskJpy).toLocaleString()}`;
+    document.getElementById('resPips').textContent = `${slPips.toFixed(1)} pips`;
+    document.getElementById('resProfit').textContent = profitJpy ? `¥${Math.round(profitJpy).toLocaleString()}` : '-';
+    document.getElementById('resCount').textContent = `${countToFail}回`;
+
+    if (rr !== null) {
+      document.getElementById('resRR').textContent = `1 : ${rr.toFixed(2)}`;
+      document.getElementById('rrComment').textContent = rr >= 2 ? '✅ 優秀' : rr >= 1 ? '⚠️ 許容範囲' : '❌ 要見直し';
+      document.getElementById('rrFill').style.width = Math.min(rr / 3 * 100, 100) + '%';
+      document.getElementById('warnRR').classList.toggle('show', rr < 1);
+    } else {
+      document.getElementById('resRR').textContent = '-';
+      document.getElementById('rrComment').textContent = 'TP未入力';
+    }
+
+    // 総リスク情報
+    const newTotal = ((usedJpy + riskJpy) / balance * 100).toFixed(1);
+    const infoEl = document.getElementById('infoCapacity');
+    infoEl.textContent = `このトレード追加後の総リスク: ${newTotal}% / 上限${maxRiskPct}%（残り枠: ¥${Math.round(remainJpy).toLocaleString()}）`;
+    infoEl.classList.toggle('show', !overLimit);
+    document.getElementById('warnOver').classList.toggle('show', overLimit);
+    document.getElementById('warnLot').classList.toggle('show', lotRounded < 0.01);
+    document.getElementById('resultBox').classList.add('show');
+    document.getElementById('addBtn').style.display = 'block';
+
+    // 保存
+    lastCalc = { symbol: document.getElementById('symbol').options[document.getElementById('symbol').selectedIndex].text.split('（')[0], lot: lotRounded, riskJpy, slPips, rr };
+
+    setTimeout(() => {
+      document.getElementById('resultBox').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  }
+
+  // 初期化
+  document.getElementById('usdJpy').addEventListener('input', updateRefTable);
+  document.getElementById('balance').addEventListener('input', updateMeter);
+  document.getElementById('maxTotalRisk').addEventListener('input', updateMeter);
+  loadPositions();
+  renderPositions();
+  updateRefTable();
+  updateMeter();
+</script>
+</body>
+</html>
